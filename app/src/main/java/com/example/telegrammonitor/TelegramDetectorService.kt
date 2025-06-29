@@ -75,7 +75,7 @@ class TelegramDetectorService : AccessibilityService() {
 
         // Check if we're in Telegram
         val packageName = event.packageName?.toString()
-        if (packageName != null && packageName.contains("telegram", true)) {
+        if (packageName != null && (packageName.contains("telegram", true) || packageName.contains("org.telegram", true))) {
             Log.d(TAG, "In Telegram app, scanning for text...")
             
             val allText = getAllText(root)
@@ -90,8 +90,27 @@ class TelegramDetectorService : AccessibilityService() {
                 )
             }
             
-            if (containsText(root, "Meduza — LIVE")) {
-                Log.d(TAG, "TARGET TEXT FOUND: Meduza — LIVE")
+            // Try multiple variants of the target text
+            val targetVariants = listOf(
+                "Meduza — LIVE",
+                "Meduza - LIVE", 
+                "Meduza– LIVE",
+                "Meduza—LIVE",
+                "Meduza - LIVE",
+                "Meduza LIVE",
+                "Meduza–LIVE"
+            )
+            
+            val detected = targetVariants.any { variant ->
+                containsText(root, variant)
+            }
+            
+            if (detected) {
+                Log.d(TAG, "TARGET TEXT FOUND: Meduza variant detected")
+                showPopup()
+            } else if (allText.contains("Meduza", true) && allText.contains("LIVE", true)) {
+                // Fallback if text is split across nodes
+                Log.d(TAG, "TARGET TEXT FOUND (split across nodes)")
                 showPopup()
             } else {
                 Log.d(TAG, "Target text not found")
@@ -142,13 +161,104 @@ class TelegramDetectorService : AccessibilityService() {
         }
     }
 
-    private fun containsText(node: AccessibilityNodeInfo, text: String): Boolean {
-        if (node.text?.toString()?.contains(text, true) == true) return true
-        if (node.contentDescription?.toString()?.contains(text, true) == true) return true
+    override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        eventCounter++
+        lastEventTime = System.currentTimeMillis()
         
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            if (containsText(child, text)) return true
+        Log.d(TAG, "Event #$eventCounter: ${event.eventType}, package: ${event.packageName}")
+        
+        // Debug notification: Event received (update every 10 events)
+        if (eventCounter % 10 == 0) {
+            showDebugNotification(
+                NOTIFICATION_ID_EVENT,
+                "Events: $eventCounter",
+                "Last event: ${getCurrentTime()}, Package: ${event.packageName}"
+            )
+        }
+
+        val root = rootInActiveWindow
+        if (root == null) {
+            Log.d(TAG, "Root node is null")
+            return
+        }
+
+        // Check if we're in Telegram
+        val packageName = event.packageName?.toString()
+        if (packageName != null && (packageName.contains("telegram", true) || packageName.contains("org.telegram", true))) {
+            Log.d(TAG, "In Telegram app, scanning for text...")
+            
+            val allText = getAllText(root)
+            Log.d(TAG, "Found text in Telegram: $allText")
+            
+            // Debug notification: Show what text we found in Telegram
+            if (allText.isNotEmpty()) {
+                showDebugNotification(
+                    NOTIFICATION_ID_TEXT_FOUND,
+                    "Telegram Text Found",
+                    "Text: ${allText.take(100)}${if (allText.length > 100) "..." else ""}"
+                )
+            }
+            
+            // Try multiple variants of the target text
+            val targetVariants = listOf(
+                "Meduza — LIVE",
+                "Meduza - LIVE", 
+                "Meduza– LIVE",
+                "Meduza—LIVE",
+                "Meduza - LIVE",
+                "Meduza LIVE",
+                "Meduza–LIVE"
+            )
+            
+            val detected = targetVariants.any { variant ->
+                containsText(root, variant)
+            }
+            
+            if (detected) {
+                Log.d(TAG, "TARGET TEXT FOUND: Meduza variant detected")
+                showPopup()
+            } else if (allText.contains("Meduza", true) && allText.contains("LIVE", true)) {
+                // Fallback if text is split across nodes
+                Log.d(TAG, "TARGET TEXT FOUND (split across nodes)")
+                showPopup()
+            } else {
+                Log.d(TAG, "Target text not found")
+                hidePopup()
+            }
+        } else {
+            hidePopup()
+        }
+    }
+
+    // Improve text detection to be more robust
+    private fun containsText(node: AccessibilityNodeInfo, text: String): Boolean {
+        try {
+            val nodeText = node.text?.toString()
+            if (nodeText != null) {
+                if (nodeText.contains(text, true)) return true
+                
+                // Check if the text appears with different spacing
+                val normalizedText = text.replace("\\s+".toRegex(), " ")
+                val normalizedNodeText = nodeText.replace("\\s+".toRegex(), " ")
+                if (normalizedNodeText.contains(normalizedText, true)) return true
+            }
+            
+            val contentDesc = node.contentDescription?.toString()
+            if (contentDesc != null) {
+                if (contentDesc.contains(text, true)) return true
+                
+                // Check content description with normalized spaces too
+                val normalizedText = text.replace("\\s+".toRegex(), " ")
+                val normalizedDesc = contentDesc.replace("\\s+".toRegex(), " ")
+                if (normalizedDesc.contains(normalizedText, true)) return true
+            }
+            
+            for (i in 0 until node.childCount) {
+                val child = node.getChild(i) ?: continue
+                if (containsText(child, text)) return true
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking text: ${e.message}")
         }
         return false
     }
