@@ -207,7 +207,13 @@ class TelegramDetectorService : AccessibilityService() {
                 "Meduza—LIVE",
                 "Meduza - LIVE",
                 "Meduza LIVE",
-                "Meduza–LIVE"
+                "Meduza–LIVE",
+                "Медуза — LIVE",
+                "Медуза - LIVE",
+                "Медуза– LIVE", 
+                "Медуза—LIVE",
+                "Медуза LIVE",
+                "Медуза–LIVE"
             )
             
             val detected = targetVariants.any { variant ->
