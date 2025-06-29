@@ -160,7 +160,7 @@ class TelegramDetectorService : AccessibilityService() {
             collectAllText(child, textList)
         }
     }
-
+    /*
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         eventCounter++
         lastEventTime = System.currentTimeMillis()
@@ -229,7 +229,7 @@ class TelegramDetectorService : AccessibilityService() {
             hidePopup()
         }
     }
-
+    */
     // Improve text detection to be more robust
     private fun containsText(node: AccessibilityNodeInfo, text: String): Boolean {
         try {
