@@ -22,7 +22,8 @@ class TelegramDetectorService : AccessibilityService() {
     private var notificationManager: NotificationManager? = null
     private var eventCounter = 0
     private var lastEventTime = 0L
-    
+    private var screenHeight = 0
+
     companion object {
         private const val TAG = "TelegramDetector"
         private const val CHANNEL_ID = "telegram_monitor_debug"
@@ -39,6 +40,16 @@ class TelegramDetectorService : AccessibilityService() {
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         
+        // Get screen height
+        screenHeight = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            wm!!.currentWindowMetrics.bounds.height()
+        } else {
+            val displayMetrics = android.util.DisplayMetrics()
+            @Suppress("DEPRECATION")
+            wm!!.defaultDisplay.getMetrics(displayMetrics)
+            displayMetrics.heightPixels
+        }
+
         createNotificationChannel()
         hidePopup()
         
@@ -78,8 +89,8 @@ class TelegramDetectorService : AccessibilityService() {
         if (packageName != null && (packageName.contains("telegram", true) || packageName.contains("org.telegram", true))) {
             Log.d(TAG, "In Telegram app, scanning for text...")
             
-            val allText = getAllText(root)
-            Log.d(TAG, "Found text in Telegram: $allText")
+            val allText = getTopScreenText(root)
+            Log.d(TAG, "Found text in Telegram header: $allText")
             
             // Debug notification: Show what text we found in Telegram
             if (allText.isNotEmpty()) {
@@ -149,13 +160,23 @@ class TelegramDetectorService : AccessibilityService() {
         notificationManager?.cancelAll()
     }
 
-    private fun getAllText(node: AccessibilityNodeInfo): String {
+    private fun getTopScreenText(node: AccessibilityNodeInfo): String {
         val textList = mutableListOf<String>()
-        collectAllText(node, textList)
+        // Define top 20% of the screen as the header area
+        val topThreshold = screenHeight / 5 
+        collectTopScreenText(node, textList, topThreshold)
         return textList.joinToString(" | ")
     }
-    
-    private fun collectAllText(node: AccessibilityNodeInfo, textList: MutableList<String>) {
+
+    private fun collectTopScreenText(node: AccessibilityNodeInfo, textList: MutableList<String>, topThreshold: Int) {
+        val bounds = android.graphics.Rect()
+        node.getBoundsInScreen(bounds)
+
+        // Only consider nodes that are within the top threshold
+        if (bounds.top > topThreshold && bounds.bottom > topThreshold) {
+            return
+        }
+
         node.text?.toString()?.let { text ->
             if (text.trim().isNotEmpty()) {
                 textList.add(text.trim())
@@ -170,7 +191,7 @@ class TelegramDetectorService : AccessibilityService() {
         
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
-            collectAllText(child, textList)
+            collectTopScreenText(child, textList, topThreshold)
         }
     }
     /*
