@@ -1,6 +1,6 @@
 # Telegram Monitor
 
-An Android application that monitors when a user is viewing the "Meduza — LIVE" channel in Telegram and displays an overlay notification.
+An Android application that monitors when a user is viewing the "Meduza — LIVE" / "Медуза - LIVE" channel in Telegram and displays an overlay notification.
 
 ## Features
 
@@ -22,17 +22,28 @@ An Android application that monitors when a user is viewing the "Meduza — LIVE
 2. Open the project in Android Studio
 3. Build and install using:
 
-```bash
-./gradlew installDebug
-```
+    ```bash
+    ./gradlew installDebug
+    ```
 
-Alternatively, you can build an APK:
+   Alternatively, you can build an APK:
 
-```bash
-./gradlew assembleDebug
-```
+    ```bash
+    ./gradlew assembleDebug
+    ```
 
-The APK will be available at `app/build/outputs/apk/debug/app-debug.apk`
+   The APK will be available at [app-debug.apk](http://_vscodecontentref_/0)
+
+### Using Makefile
+
+- To build the APK:
+    ```sh
+    make b
+    ```
+- To install the APK on a connected device:
+    ```sh
+    make i
+    ```
 
 ## Setup and Usage
 
@@ -58,8 +69,8 @@ This app requires the following permissions:
 
 ## How It Works
 
-The app uses Android's Accessibility Service API to monitor text displayed on the screen. When it detects the specific text "Meduza — LIVE", it displays an overlay notification using the system alert window functionality.
+The app uses Android's Accessibility Service API to monitor text displayed on the screen. When it detects the specific text "Meduza — LIVE" / "Медуза - LIVE", it displays an overlay notification using the system alert window functionality.
 
 ## Privacy
 
-This application only detects the presence of specific text ("Meduza — LIVE") on your screen. It does not collect, store, or transmit any data.
+This application only detects the presence of specific text ("Meduza — LIVE" / "Медуза - LIVE") on your screen. It does not collect, store, or transmit any data.
