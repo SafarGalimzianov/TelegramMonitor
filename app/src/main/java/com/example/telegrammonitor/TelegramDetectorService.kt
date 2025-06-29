@@ -90,6 +90,7 @@ class TelegramDetectorService : AccessibilityService() {
                 )
             }
             
+            /*
             // Try multiple variants of the target text
             val targetVariants = listOf(
                 "Meduza — LIVE",
@@ -116,6 +117,7 @@ class TelegramDetectorService : AccessibilityService() {
                 Log.d(TAG, "Target text not found")
                 hidePopup()
             }
+            */
         } else {
             hidePopup()
         }
@@ -223,7 +225,7 @@ class TelegramDetectorService : AccessibilityService() {
             if (detected) {
                 Log.d(TAG, "TARGET TEXT FOUND: Meduza variant detected")
                 showPopup()
-            } else if (allText.contains("Meduza", true) && allText.contains("LIVE", true)) {
+            } else if ((allText.contains("Meduza", true) || allText.contains("Медуза", true)) && allText.contains("LIVE", true)) {
                 // Fallback if text is split across nodes
                 Log.d(TAG, "TARGET TEXT FOUND (split across nodes)")
                 showPopup()
@@ -278,8 +280,12 @@ class TelegramDetectorService : AccessibilityService() {
         Log.d(TAG, "Creating popup")
         
         val params = WindowManager.LayoutParams(
+            800,
+            1200,
+            /*
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
+            */
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else
