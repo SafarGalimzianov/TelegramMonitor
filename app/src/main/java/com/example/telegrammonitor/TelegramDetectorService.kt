@@ -89,7 +89,18 @@ class TelegramDetectorService : AccessibilityService() {
                     "Text: ${allText.take(100)}${if (allText.length > 100) "..." else ""}"
                 )
             }
-            
+            // Simplified detection: check for "Meduza" (or "Медуза") and "LIVE" anywhere on screen.
+            // This is more robust than checking for exact variants.
+            val hasMeduza = allText.contains("Meduza", ignoreCase = true) || allText.contains("Медуза", ignoreCase = true)
+            val hasLive = allText.contains("LIVE", ignoreCase = true)
+
+            if (hasMeduza && hasLive) {
+                Log.d(TAG, "TARGET TEXT FOUND: Meduza and LIVE detected")
+                showPopup()
+            } else {
+                Log.d(TAG, "Target text not found")
+                hidePopup()
+            }
             /*
             // Try multiple variants of the target text
             val targetVariants = listOf(
